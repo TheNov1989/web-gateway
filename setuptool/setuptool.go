@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/web-api-gateway/config"
+	"github.com/TheNov1989/web-gateway/config"
 )
 
 func main() {
