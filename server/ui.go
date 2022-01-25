@@ -32,7 +32,7 @@ import (
 	option "google.golang.org/api/option"
 	plus "google.golang.org/api/plus/v1"
 
-	"github.com/TheNov1989/web-gateway/config"
+	"github.com/google/web-api-gateway/config"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -58,8 +58,8 @@ var (
 )
 
 var oauthConf *oauth2.Config = &oauth2.Config{
-	ClientID:     "523939206127-3pr1qbrn0g78l6r9nu10l733q9obgn0t.apps.googleusercontent.com",
-	ClientSecret: "zKY48Os4L8xKAuQoiBFqrLkW",
+	ClientID:     "1055112101845-ggg9or6alkn1nov5bcq4opl08bs5ck41.apps.googleusercontent.com",
+	ClientSecret: "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",
 	Scopes:       []string{"email", "profile"},
 	Endpoint:     google.Endpoint,
 }
@@ -119,7 +119,7 @@ func UIHandlers() *mux.Router {
 	r.Methods("POST").Path("/portal/mapping").Handler(appHandler(mappingHandler))
 
 	r.PathPrefix("/portal/static/").Handler(http.StripPrefix("/portal/static/",
-		http.FileServer(http.Dir("/go/src/github.com/TheNov1989/web-gateway/server/static"))))
+		http.FileServer(http.Dir("/go/src/github.com/google/web-api-gateway/server/static"))))
 
 	return r
 }

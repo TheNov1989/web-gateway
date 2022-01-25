@@ -35,7 +35,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TheNov1989/web-gateway/config"
+	"github.com/google/web-api-gateway/config"
 	"golang.org/x/oauth2"
 )
 
