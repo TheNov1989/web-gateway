@@ -106,6 +106,7 @@ func UIHandlers() *mux.Router {
 
 	r.Methods("POST").Path("/portal/saveservice").Handler(appHandler(saveServiceHandler))
 	r.Methods("POST").Path("/portal/saveaccount").Handler(appHandler(saveAccountHandler))
+	r.Methods("GET").Path("/portal/transact").Handler(appHandler(transactHandler))
 
 	r.Methods("GET").Path("/portal/login").Handler(appHandler(loginHandler))
 	r.Methods("GET").Path("/portal/auth").Handler(appHandler(oauthCallbackHandler))
@@ -122,6 +123,38 @@ func UIHandlers() *mux.Router {
 		http.FileServer(http.Dir("/go/src/github.com/google/web-api-gateway/server/static"))))
 
 	return r
+}
+
+func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
+
+	s := r.URL.Query().Get("service")
+	/*
+
+		c, err := config.ReadConfig()
+		if err != nil {
+			return appErrorf(err, "could not read config file: %v", err)
+		}
+
+			_, service, err := serviceFromRequest(s, c)
+			if err != nil {
+				return appErrorf(err, "could not find service: %v", err)
+			}
+	*/
+	/*
+		accountStr := mux.Vars(r)["account"]
+		_, account, err := accountFromRequest(accountStr, service)
+		if err != nil {
+			return appErrorf(err, "could not find account: %v", err)
+		}
+		key, err := config.GenerateAccountKey(c, service, account)
+		if err != nil {
+			return appErrorf(err, "could not create account key: %v", err)
+		}
+	*/
+
+	http.Redirect(w, r, "https://connect.adswerve.com/?"+s, http.StatusSeeOther)
+
+	return nil
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) *appError {
