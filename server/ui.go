@@ -127,7 +127,7 @@ func UIHandlers() *mux.Router {
 
 func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 
-	s := r.URL.Query().Get("service")
+	//s := r.URL.Query().Get("service")
 	/*
 
 		c, err := config.ReadConfig()
