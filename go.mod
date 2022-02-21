@@ -1,4 +1,4 @@
-module github.com/google/web-api-gateway
+module github.com/TheNov1989/web-gateway
 
 require (
 	github.com/gofrs/uuid v3.2.0+incompatible
