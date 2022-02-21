@@ -32,7 +32,7 @@ import (
 	option "google.golang.org/api/option"
 	plus "google.golang.org/api/plus/v1"
 
-	"github.com/google/web-api-gateway/config"
+	"github.com/TheNov1989/web-gateway/config"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -120,7 +120,7 @@ func UIHandlers() *mux.Router {
 	r.Methods("POST").Path("/portal/mapping").Handler(appHandler(mappingHandler))
 
 	r.PathPrefix("/portal/static/").Handler(http.StripPrefix("/portal/static/",
-		http.FileServer(http.Dir("/go/src/github.com/google/web-api-gateway/server/static"))))
+		http.FileServer(http.Dir("/go/src/github.com/TheNov1989/web-gateway/server/static"))))
 
 	return r
 }

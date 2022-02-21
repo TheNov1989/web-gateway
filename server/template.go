@@ -26,7 +26,7 @@ import (
 
 var templatesFolder *string = flag.String(
 	"templatesfolder",
-	"/go/src/github.com/google/web-api-gateway/server/templates/",
+	"/go/src/github.com/TheNov1989/web-gateway/server/templates/",
 	"This is the path for the templates folder.",
 )
 
