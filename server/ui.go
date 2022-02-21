@@ -152,7 +152,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 		}
 	*/
 
-	http.Redirect(w, r, "https://connect.adswerve.com/"+s, http.StatusSeeOther)
+	http.Redirect(w, r, "https://connect.adswerve.com/?s="+s, http.StatusSeeOther)
 
 	c, err := config.ReadConfig()
 	if err != nil {
