@@ -152,9 +152,13 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 		}
 	*/
 
-	http.Redirect(w, r, "https://connect.adswerve.com/?"+s, http.StatusSeeOther)
+	http.Redirect(w, r, "https://connect.adswerve.com/", http.StatusSeeOther)
 
-	return nil
+	c, err := config.ReadConfig()
+	if err != nil {
+		return appErrorf(err, "could not read config file: %v", err)
+	}
+	return listTmpl.Execute(w, r, *c)
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) *appError {
