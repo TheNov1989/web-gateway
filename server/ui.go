@@ -136,7 +136,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 		return appErrorf(err, "could not read config file: %v", err)
 	}
 
-	serviceStr := "facebook"
+	serviceStr := "Facebook"
 	_, service, err := serviceFromRequest(serviceStr, c)
 	if err != nil {
 		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20not%20setup", http.StatusSeeOther)
