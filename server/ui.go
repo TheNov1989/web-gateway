@@ -139,7 +139,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 	serviceStr := "as-search-connector-facebook"
 	_, service, err := serviceFromRequest(serviceStr, c)
 	if err != nil {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20not%20setup"+err.Error(), http.StatusSeeOther)
+		//http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20not%20setup"+err.Error(), http.StatusSeeOther)
 		return appErrorf(err, "could not find service: %v", err)
 	}
 
