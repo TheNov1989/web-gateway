@@ -407,6 +407,10 @@ func GenerateAuthUrl(oauthConf *oauth2.Config) (string, string, error) {
 	return oauthConf.AuthCodeURL(state), state, nil
 }
 
+func GenerateAuthUrlWithState(oauthConf *oauth2.Config, state string) string {
+	return oauthConf.AuthCodeURL(state)
+}
+
 func VerifyState(code string, state string) (string, error) {
 	jsonAuthCode, err := base64.StdEncoding.DecodeString(code)
 	if err != nil {

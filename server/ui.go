@@ -127,38 +127,39 @@ func UIHandlers() *mux.Router {
 
 func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 
-	s := r.URL.Query().Get("service")
-	/*
-
-		c, err := config.ReadConfig()
-		if err != nil {
-			return appErrorf(err, "could not read config file: %v", err)
-		}
-
-			_, service, err := serviceFromRequest(s, c)
-			if err != nil {
-				return appErrorf(err, "could not find service: %v", err)
-			}
-	*/
-	/*
-		accountStr := mux.Vars(r)["account"]
-		_, account, err := accountFromRequest(accountStr, service)
-		if err != nil {
-			return appErrorf(err, "could not find account: %v", err)
-		}
-		key, err := config.GenerateAccountKey(c, service, account)
-		if err != nil {
-			return appErrorf(err, "could not create account key: %v", err)
-		}
-	*/
-
-	http.Redirect(w, r, "https://connect.adswerve.com/?s="+s, http.StatusSeeOther)
+	// gets UUID from the incoming call
+	state := r.URL.Query().Get("state")
 
 	c, err := config.ReadConfig()
 	if err != nil {
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Configuration%20error", http.StatusSeeOther)
 		return appErrorf(err, "could not read config file: %v", err)
 	}
-	return listTmpl.Execute(w, r, *c)
+
+	serviceStr := "facebook"
+	_, service, err := serviceFromRequest(serviceStr, c)
+	if err != nil {
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20not%20setup", http.StatusSeeOther)
+		return appErrorf(err, "could not find service: %v", err)
+	}
+
+	oauthConf, err := config.GenerateOauthConfig(c.Url, service)
+	if err != nil {
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20oauth%20not%20setup", http.StatusSeeOther)
+		return appErrorf(err, "could not get Oauth config: %v", err)
+	}
+
+	authUrl := config.GenerateAuthUrlWithState(oauthConf, state)
+
+	if err != nil {
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Could%20not%20generate%20auth%20URL", http.StatusSeeOther)
+		return appErrorf(err, "could not generate auth URL: %v", err)
+	}
+
+	// generates an auth url
+	http.Redirect(w, r, authUrl, http.StatusSeeOther)
+
+	return nil
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) *appError {
