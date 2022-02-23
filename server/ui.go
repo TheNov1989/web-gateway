@@ -206,33 +206,8 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 		State: r.FormValue("state"),
 	}
 
-	if response.Token == "" {
-		_, err = fmt.Fprintf(w, "Missing required form value 'code'")
-		handleAuthTokenPageError(w, err)
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
-		return appErrorf(err, "auth token error")
-
-	}
-
-	if response.State == "" {
-		_, err = fmt.Fprintf(w, "Missing required form value 'state'")
-		handleAuthTokenPageError(w, err)
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
-		return appErrorf(err, "auth token error")
-
-	}
-
-	if handleAuthTokenPageError(w, err) {
-		return appErrorf(err, "auth token error")
-	}
-
-	token, err := tokenExchangeHandler("", response.Token)
-
-	response_url := "https://connect.adswerve.com/unifier?uid=" + response.State
-
-	response_url += "&token_access_token" + token.AccessToken
-	response_url += "&token_token_type" + token.TokenType
-	response_url += "&token_refresh_token" + token.RefreshToken
+	response_url := "https://localhost:3000/unifire?uid=" + response.State
+	response_url += "&token" + response.Token
 
 	http.Redirect(w, r, response_url, http.StatusSeeOther)
 
@@ -882,7 +857,7 @@ func tokenExchangeHandler(s string, code string) (*oauth2.Token, error) {
 	serviceStr := "as-search-connector-facebook"
 	_, service, err := serviceFromRequest(serviceStr, c)
 
-	oauthConf, err := config.GenerateOauthConfig(service.OauthServiceCreds.TokenURL, service)
+	oauthConf, err := config.GenerateOauthConfig("https%3A//unif1er-app-dev.adswerve.com/portal/transact_exchange", service)
 	if err != nil {
 		return nil, err
 	}
