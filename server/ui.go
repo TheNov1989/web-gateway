@@ -107,6 +107,7 @@ func UIHandlers() *mux.Router {
 	r.Methods("POST").Path("/portal/saveservice").Handler(appHandler(saveServiceHandler))
 	r.Methods("POST").Path("/portal/saveaccount").Handler(appHandler(saveAccountHandler))
 	r.Methods("GET").Path("/portal/transact").Handler(appHandler(transactHandler))
+	r.Methods("POST").Path("/portal/transact_exchange").Handler(appHandler(transactExchangeHandler))
 
 	r.Methods("GET").Path("/portal/login").Handler(appHandler(loginHandler))
 	r.Methods("GET").Path("/portal/auth").Handler(appHandler(oauthCallbackHandler))
@@ -149,6 +150,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 		return appErrorf(err, "could not get Oauth config: %v", err)
 	}
 
+	// generates an auth url
 	authUrl := config.GenerateAuthUrlWithState(oauthConf, state)
 
 	if err != nil {
@@ -156,8 +158,83 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 		return appErrorf(err, "could not generate auth URL: %v", err)
 	}
 
-	// generates an auth url
+	query_params := strings.Split(authUrl, "?")
+	params := strings.Split(query_params[1], "&")
+	var new_url_params []string
+
+	for _, param := range params {
+		if strings.HasPrefix(param, "redirect_uri") {
+			new_url_params = append(new_url_params, "redirect_uri=https%3A%2F%2Funif1er-app-dev.adswerve.com%2Fportal%2Ftransact_exchange")
+		} else if strings.HasPrefix(param, "state") {
+			new_url_params = append(new_url_params, "state="+state)
+		} else {
+			new_url_params = append(new_url_params, param)
+		}
+	}
+
+	authUrl = query_params[0] + "?" + strings.Join(new_url_params, "&")
 	http.Redirect(w, r, authUrl, http.StatusSeeOther)
+
+	return nil
+}
+
+func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
+	err := r.ParseForm()
+	if handleAuthTokenPageError(w, err) {
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
+		return appErrorf(err, "auth token error")
+	}
+
+	if r.FormValue("error") != "" {
+		_, err := fmt.Fprintf(
+			w,
+			"The authenticating service returned an error, code='%s', details='%s'.",
+			r.FormValue("error"),
+			r.FormValue("error_description"))
+
+		handleAuthTokenPageError(w, err)
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
+		return appErrorf(err, "auth token error")
+
+	}
+
+	response := struct {
+		Token string
+		State string
+	}{
+		Token: r.FormValue("code"),
+		State: r.FormValue("state"),
+	}
+
+	if response.Token == "" {
+		_, err = fmt.Fprintf(w, "Missing required form value 'code'")
+		handleAuthTokenPageError(w, err)
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
+		return appErrorf(err, "auth token error")
+
+	}
+
+	if response.State == "" {
+		_, err = fmt.Fprintf(w, "Missing required form value 'state'")
+		handleAuthTokenPageError(w, err)
+		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
+		return appErrorf(err, "auth token error")
+
+	}
+
+	if handleAuthTokenPageError(w, err) {
+		return appErrorf(err, "auth token error")
+	}
+
+	token, err := tokenExchangeHandler("", response.Token)
+
+	response_url := "https://connect.adswerve.com/unifier?uid=" + response.State
+
+	response_url += "&token_access_token" + token.AccessToken
+	response_url += "&token_token_type" + token.TokenType
+	response_url += "&token_refresh_token" + token.RefreshToken
+
+	http.Redirect(w, r, response_url, http.StatusSeeOther)
 
 	return nil
 }
@@ -797,6 +874,24 @@ func setStateToSession(w http.ResponseWriter, r *http.Request, state string) *ap
 		return appErrorf(err, "could not save session: %v", err)
 	}
 	return nil
+}
+
+func tokenExchangeHandler(s string, code string) (*oauth2.Token, error) {
+	c, err := config.ReadConfig()
+
+	serviceStr := "as-search-connector-facebook"
+	_, service, err := serviceFromRequest(serviceStr, c)
+
+	oauthConf, err := config.GenerateOauthConfig(service.OauthServiceCreds.TokenURL, service)
+	if err != nil {
+		return nil, err
+	}
+	token, err := oauthConf.Exchange(context.Background(), code)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 type appHandler func(http.ResponseWriter, *http.Request) *appError
