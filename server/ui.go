@@ -107,7 +107,7 @@ func UIHandlers() *mux.Router {
 	r.Methods("POST").Path("/portal/saveservice").Handler(appHandler(saveServiceHandler))
 	r.Methods("POST").Path("/portal/saveaccount").Handler(appHandler(saveAccountHandler))
 	r.Methods("GET").Path("/portal/transact").Handler(appHandler(transactHandler))
-	r.Methods("POST").Path("/portal/transact_exchange").Handler(appHandler(transactExchangeHandler))
+	r.Methods("GET").Path("/portal/transact_exchange").Handler(appHandler(transactExchangeHandler))
 
 	r.Methods("GET").Path("/portal/login").Handler(appHandler(loginHandler))
 	r.Methods("GET").Path("/portal/auth").Handler(appHandler(oauthCallbackHandler))
