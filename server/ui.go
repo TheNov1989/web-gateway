@@ -207,7 +207,7 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 	}
 
 	response_url := "https://localhost:3000/unifire?uid=" + response.State
-	response_url += "&token" + response.Token
+	response_url += "&token=" + response.Token
 
 	http.Redirect(w, r, response_url, http.StatusSeeOther)
 
