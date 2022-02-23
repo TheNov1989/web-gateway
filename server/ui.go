@@ -206,7 +206,7 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 		State: r.FormValue("state"),
 	}
 
-	response_url := "https://localhost:3000/unifire?uid=" + response.State
+	response_url := "https://adswerve-client-portal-develop.firebaseapp.com/unifire?uid=" + response.State
 	response_url += "&token=" + response.Token
 
 	http.Redirect(w, r, response_url, http.StatusSeeOther)
