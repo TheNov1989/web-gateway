@@ -192,7 +192,6 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 			r.FormValue("error"),
 			r.FormValue("error_description"))
 
-		handleAuthTokenPageError(w, err)
 		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
 		return appErrorf(err, "auth token error")
 
@@ -206,7 +205,7 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 		State: r.FormValue("state"),
 	}
 
-	response_url := "https://adswerve-client-portal-develop.firebaseapp.com/unifire?uid=" + response.State
+	response_url := "https://adswerve-client-portal-staging.firebaseapp.com/unifire?uid=" + response.State
 	response_url += "&token=" + response.Token
 
 	http.Redirect(w, r, response_url, http.StatusSeeOther)
