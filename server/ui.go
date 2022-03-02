@@ -180,18 +180,8 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 
 func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 	err := r.ParseForm()
-	if handleAuthTokenPageError(w, err) {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
-		return appErrorf(err, "auth token error")
-	}
 
 	if r.FormValue("error") != "" {
-		_, err := fmt.Fprintf(
-			w,
-			"The authenticating service returned an error, code='%s', details='%s'.",
-			r.FormValue("error"),
-			r.FormValue("error_description"))
-
 		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
 		return appErrorf(err, "auth token error")
 
