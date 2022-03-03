@@ -182,7 +182,7 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 	err := r.ParseForm()
 
 	if r.FormValue("error") != "" {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
+		http.Redirect(w, r, "https://connect.adswerve.com/unifire?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
 		return appErrorf(err, "auth token error")
 
 	}
