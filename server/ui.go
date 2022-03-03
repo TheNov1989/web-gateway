@@ -164,7 +164,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 
 	for _, param := range params {
 		if strings.HasPrefix(param, "redirect_uri") {
-			new_url_params = append(new_url_params, "redirect_uri=https%3A%2F%2Funif1er-app-dev.adswerve.com%2Fportal%2Ftransact_exchange")
+			new_url_params = append(new_url_params, "redirect_uri=https%3A%2F%2Funifire-app.adswerve.com%2Fportal%2Ftransact_exchange")
 		} else if strings.HasPrefix(param, "state") {
 			new_url_params = append(new_url_params, "state="+state)
 		} else {
