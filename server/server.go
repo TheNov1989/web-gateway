@@ -510,7 +510,7 @@ func publish_pubsub(topicID string, fn functionState) error {
 	fn.ExecutionTimeMs = diff.Nanoseconds() / 1000
 
 	ctx := context.Background()
-	client, err := pubsub.NewClient(ctx, "adswerve-client-portal-develop")
+	client, err := pubsub.NewClient(ctx, "adswerve-search-connector-dev")
 	if err != nil {
 		return fmt.Errorf("pubsub.NewClient: %v", err)
 	}
