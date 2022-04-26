@@ -512,6 +512,7 @@ func publish_pubsub(topicID string, fn functionState) error {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, "adswerve-search-connector-dev")
 	if err != nil {
+		log.Fatalf("pubsub.NewClient error: %v", err)
 		return fmt.Errorf("pubsub.NewClient: %v", err)
 	}
 	defer client.Close()
@@ -527,6 +528,7 @@ func publish_pubsub(topicID string, fn functionState) error {
 	// ID is returned for the published message.
 	id, err := result.Get(ctx)
 	if err != nil {
+		log.Fatalf("pubsub.Get error: %v", err)
 		return fmt.Errorf("Get: %v", err)
 	}
 	log.Println("Published a message; msg ID: ", id)

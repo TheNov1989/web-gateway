@@ -46,6 +46,8 @@ const (
 	oauthTokenSessionKey = "oauth_token"
 	stateSessionKey      = "state"
 	oauthFlowRedirectKey = "redirect"
+	connect_url          = "https://adswerve-client-portal-develop.firebaseapp.com/"
+	unifire_url          = "unif1er-app-dev.adswerve.com"
 )
 
 var (
@@ -133,20 +135,20 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 
 	c, err := config.ReadConfig()
 	if err != nil {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Configuration%20error", http.StatusSeeOther)
+		http.Redirect(w, r, connect_url+"/unifier?error=Configuration%20error", http.StatusSeeOther)
 		return appErrorf(err, "could not read config file: %v", err)
 	}
 
 	serviceStr := "as-search-connector-facebook"
 	_, service, err := serviceFromRequest(serviceStr, c)
 	if err != nil {
-		//http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20not%20setup"+err.Error(), http.StatusSeeOther)
+		//http.Redirect(w, r, connect_url + "unifier?error=Service%20not%20setup"+err.Error(), http.StatusSeeOther)
 		return appErrorf(err, "could not find service: %v", err)
 	}
 
 	oauthConf, err := config.GenerateOauthConfig(c.Url, service)
 	if err != nil {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Service%20oauth%20not%20setup", http.StatusSeeOther)
+		http.Redirect(w, r, connect_url+"unifier?error=Service%20oauth%20not%20setup", http.StatusSeeOther)
 		return appErrorf(err, "could not get Oauth config: %v", err)
 	}
 
@@ -154,7 +156,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 	authUrl := config.GenerateAuthUrlWithState(oauthConf, state)
 
 	if err != nil {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifier?error=Could%20not%20generate%20auth%20URL", http.StatusSeeOther)
+		http.Redirect(w, r, connect_url+"unifier?error=Could%20not%20generate%20auth%20URL", http.StatusSeeOther)
 		return appErrorf(err, "could not generate auth URL: %v", err)
 	}
 
@@ -164,7 +166,7 @@ func transactHandler(w http.ResponseWriter, r *http.Request) *appError {
 
 	for _, param := range params {
 		if strings.HasPrefix(param, "redirect_uri") {
-			new_url_params = append(new_url_params, "redirect_uri=https%3A%2F%2Funifire-app.adswerve.com%2Fportal%2Ftransact_exchange")
+			new_url_params = append(new_url_params, "redirect_uri=https%3A%2F%2F"+unifire_url+"%2Fportal%2Ftransact_exchange")
 		} else if strings.HasPrefix(param, "state") {
 			new_url_params = append(new_url_params, "state="+state)
 		} else {
@@ -182,7 +184,7 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 	err := r.ParseForm()
 
 	if r.FormValue("error") != "" {
-		http.Redirect(w, r, "https://connect.adswerve.com/unifire?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
+		http.Redirect(w, r, connect_url+"unifire?error=Failed%20to%20create%20auth%20token", http.StatusSeeOther)
 		return appErrorf(err, "auth token error")
 
 	}
@@ -195,7 +197,7 @@ func transactExchangeHandler(w http.ResponseWriter, r *http.Request) *appError {
 		State: r.FormValue("state"),
 	}
 
-	response_url := "https://connect.adswerve.com/unifire?uid=" + response.State
+	response_url := connect_url + "unifire?uid=" + response.State
 	response_url += "&token=" + response.Token
 
 	http.Redirect(w, r, response_url, http.StatusSeeOther)
