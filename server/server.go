@@ -35,15 +35,11 @@ import (
 	"sync"
 	"time"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/TheNov1989/web-gateway/config"
 	"golang.org/x/oauth2"
 )
 
 const version = "2.1.1"
-
-const functionComplete = "adm-function-complete"
-const functionError = "adm-function-error"
 
 // TODO: switch to some other time interval?
 const reloadInterval = time.Minute * 30
@@ -120,11 +116,6 @@ func (h Handlers) HandleFunc(pattern string, handler http.HandlerFunc) {
 }
 
 func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	state := &functionState{
-		StartTime: time.Now(),
-		Input:     fmt.Sprintf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL),
-	}
-
 	log.Printf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL)
 	path := r.URL.Path
 	spath := strings.Split(path, "/")
@@ -135,13 +126,9 @@ func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if strings.HasPrefix(path, "/portal") {
 		UIHandlers().ServeHTTP(w, r)
-		publish_pubsub(functionComplete, *state)
 	} else if handler, ok := h[path]; ok && handler.Enabled {
 		handler.ServeHTTP(w, r)
-		publish_pubsub(functionComplete, *state)
 	} else {
-		state.Error = "404 Not Found"
-		publish_pubsub(functionError, *state)
 		http.Error(w, "Not Found", http.StatusNotFound)
 	}
 }
@@ -261,33 +248,20 @@ func createAccountHandler(c *config.Config, service *config.Service, account *co
 func wrapWithClientAuth(handler http.Handler, account *config.Account) (http.HandlerFunc, error) {
 	// TODO TEST account.ClientCreds.Protocol and ensure it's what we're expecting here.
 
-	acc, err := json.Marshal(account)
-
-	state := &functionState{
-		StartTime: time.Now(),
-		Input:     string(acc),
-	}
-
 	der, err := base64.StdEncoding.DecodeString(account.ClientCreds.PrivateKey)
 	if err != nil {
 		// Don't log error details in case they include info on the secret.
-		state.Error = "error decoding private key from base64"
-		publish_pubsub(functionError, *state)
 		return nil, errors.New("error decoding private key from base64")
 	}
 
 	privateKey, err := x509.ParsePKCS8PrivateKey(der)
 	if err != nil {
 		// Don't log error details in case they include info on the secret.
-		state.Error = "error parsing private key"
-		publish_pubsub(functionError, *state)
 		return nil, errors.New("error parsing private key")
 	}
 
 	switch privateKey := privateKey.(type) {
 	case *ecdsa.PrivateKey:
-		state.Result = functionResult{FunctionCall: "wrapWithClientAuth", Result: "Verified request"}
-		publish_pubsub(functionError, *state)
 		return onlyAllowVerifiedRequests(handler, &privateKey.PublicKey, time.Now), nil
 	}
 	return nil, errors.New("Private key not of type ecdsa")
@@ -488,49 +462,4 @@ func handleAuthTokenPageError(w http.ResponseWriter, err error) bool {
 		return true
 	}
 	return false
-}
-
-type functionState struct {
-	StartTime       time.Time      `json:"startTime"`
-	Input           string         `json:"input"`
-	Result          functionResult `json:"result"`
-	Error           string         `json:"error"`
-	ExecutionTimeMs int64          `json:"executionTimeMs"`
-}
-
-type functionResult struct {
-	FunctionCall string `json:"functionCall"` // function being logged
-	Result       string `json:"result"`       // json string of result
-}
-
-func publish_pubsub(topicID string, fn functionState) error {
-	currentTime := time.Now()
-	diff := currentTime.Sub(fn.StartTime)
-
-	fn.ExecutionTimeMs = diff.Nanoseconds() / 1000
-
-	ctx := context.Background()
-	client, err := pubsub.NewClient(ctx, "adswerve-search-connector-dev")
-	if err != nil {
-		log.Fatalf("pubsub.NewClient error: %v", err)
-		return fmt.Errorf("pubsub.NewClient: %v", err)
-	}
-	defer client.Close()
-
-	t := client.Topic(topicID)
-
-	msg, err := json.Marshal(fn)
-
-	result := t.Publish(ctx, &pubsub.Message{
-		Data: []byte(string(msg)),
-	})
-	// Block until the result is returned and a server-generated
-	// ID is returned for the published message.
-	id, err := result.Get(ctx)
-	if err != nil {
-		log.Fatalf("pubsub.Get error: %v", err)
-		return fmt.Errorf("Get: %v", err)
-	}
-	log.Println("Published a message; msg ID: ", id)
-	return nil
 }
