@@ -357,7 +357,6 @@ func adjustRequest(r *http.Request, domain *url.URL) {
 
 	r.RemoteAddr = ""
 	r.Host = domain.Host
-
 }
 
 func authlessForward(modifyResponse func(*http.Response) error) http.Handler {

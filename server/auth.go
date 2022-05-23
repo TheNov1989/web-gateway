@@ -22,6 +22,7 @@ import (
 	"crypto/sha256"
 	"encoding/asn1"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -36,6 +37,11 @@ func onlyAllowVerifiedRequests(
 	handler http.Handler, key *ecdsa.PublicKey, now func() time.Time) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		state := &functionState{
+			StartTime: time.Now(),
+		}
+
 		signature, err := base64.StdEncoding.DecodeString(r.Header.Get("For-Web-Api-Gateway-Signature"))
 		if err != nil {
 			ErrorInvalidHeaders.ServeHTTP(w, r)
@@ -69,9 +75,12 @@ func onlyAllowVerifiedRequests(
 
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
+			state.Error = "Error reading input body"
+			publish_pubsub(functionError, *state)
 			ErrorIO.ServeHTTP(w, r)
 			return
 		}
+		state.Input = fmt.Sprintf("{\"RemoteAddr\": \"%s\", \"Method\": \"%s\", \"url\": \"%s\", \"body\": \"%s\"", r.RemoteAddr, r.Method, r.URL, string(body))
 
 		signed := make([]byte, 0)
 		signed = append(signed, []byte(r.URL.String())...)
@@ -92,6 +101,7 @@ func onlyAllowVerifiedRequests(
 		r2.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 		w.Header().Set("From-Web-Api-Gateway-Was-Auth-Error", "false")
+		publish_pubsub(functionComplete, *state)
 		handler.ServeHTTP(w, r2)
 	}
 }
