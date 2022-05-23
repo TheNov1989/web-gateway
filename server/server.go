@@ -26,6 +26,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -40,6 +41,9 @@ import (
 )
 
 const version = "2.1.1"
+
+const functionComplete = "adm-function-complete"
+const functionError = "adm-function-error"
 
 // TODO: switch to some other time interval?
 const reloadInterval = time.Minute * 30
@@ -117,6 +121,12 @@ func (h Handlers) HandleFunc(pattern string, handler http.HandlerFunc) {
 
 func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL)
+
+	state := &functionState{
+		StartTime: time.Now(),
+		Input:     fmt.Sprintf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL),
+	}
+
 	path := r.URL.Path
 	spath := strings.Split(path, "/")
 	if len(spath) >= 6 {
@@ -125,10 +135,15 @@ func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.HasPrefix(path, "/portal") {
+
+		publish_pubsub(functionComplete, *state)
 		UIHandlers().ServeHTTP(w, r)
 	} else if handler, ok := h[path]; ok && handler.Enabled {
+		publish_pubsub(functionComplete, *state)
 		handler.ServeHTTP(w, r)
 	} else {
+		state.Error = "404 Not Found"
+		publish_pubsub(functionError, *state)
 		http.Error(w, "Not Found", http.StatusNotFound)
 	}
 }
@@ -462,4 +477,57 @@ func handleAuthTokenPageError(w http.ResponseWriter, err error) bool {
 		return true
 	}
 	return false
+}
+
+type functionState struct {
+	StartTime       time.Time      `json:"startTime"`
+	Input           string         `json:"input"`
+	Result          functionResult `json:"result"`
+	Error           string         `json:"errorMessage"`
+	ExecutionTimeMs int64          `json:"executionTimeMs"`
+}
+
+type functionResult struct {
+	FunctionCall string `json:"functionCall"` // function being logged
+	Result       string `json:"result"`       // json string of result
+}
+
+func publish_pubsub(topicID string, fn functionState) error {
+	currentTime := time.Now()
+	diff := currentTime.Sub(fn.StartTime)
+
+	fn.ExecutionTimeMs = diff.Nanoseconds() / 1000
+
+	msg, err := json.Marshal(fn)
+
+	target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
+	// target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
+	// target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
+
+	url := target_log + url.QueryEscape("{\"topic\":\""+topicID+"\",\"payload\":"+string(msg)+"}")
+
+	method := "POST"
+
+	payload := strings.NewReader(`{}`)
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("publish_pubsub error: %v", err)
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Fatalf("publish_pubsub error: %v", err)
+	}
+	fmt.Println(string(body))
+
+	// Block until the result is returned and a server-generated
+	// ID is returned for the published message.
+	return nil
 }
