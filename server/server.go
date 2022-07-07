@@ -125,6 +125,7 @@ func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	state := &functionState{
 		StartTime: time.Now(),
 		Input:     fmt.Sprintf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL),
+		Name:      "WebApiGateway.ServeHTTP",
 	}
 
 	path := r.URL.Path
@@ -484,6 +485,8 @@ type functionState struct {
 	Result          functionResult `json:"result"`
 	Error           string         `json:"errorMessage"`
 	ExecutionTimeMs int64          `json:"executionTimeMs"`
+	ProjectId       string         `json:"projectId"`
+	Name            string         `json:"Name"`
 }
 
 type functionResult struct {
@@ -499,7 +502,7 @@ func publish_pubsub(topicID string, fn functionState) error {
 
 	msg, err := json.Marshal(fn)
 
-	target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
+	target_log := "https://us-central1-adswerve-sa-connector-prod.cloudfunctions.net/https_to_pubsub?input="
 	// target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
 	// target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
 
