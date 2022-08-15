@@ -299,7 +299,7 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 
 		function_complete_state := &functionState{
 			StartTime: time.Now(),
-			Input:     fmt.Sprintf("{ 'function': 'createModifyResponse', 'request_url': '%s', 'response_code': '%d'}", r.Request.RequestURI, r.StatusCode),
+			Input:     fmt.Sprintf("{ 'function': 'createModifyResponse', 'request_url': '%s', 'response_code': '%d', 'response_body', '%s'}", r.Request.RequestURI, r.StatusCode, r.Body),
 			Name:      "WebApiGateway.createModifyResponse",
 		}
 
