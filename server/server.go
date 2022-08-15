@@ -122,12 +122,6 @@ func (h Handlers) HandleFunc(pattern string, handler http.HandlerFunc) {
 func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL)
 
-	state := &functionState{
-		StartTime: time.Now(),
-		Input:     fmt.Sprintf("Incoming Request %s %s %s", r.RemoteAddr, r.Method, r.URL),
-		Name:      "WebApiGateway.ServeHTTP",
-	}
-
 	path := r.URL.Path
 	spath := strings.Split(path, "/")
 	if len(spath) >= 6 {
@@ -136,14 +130,10 @@ func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.HasPrefix(path, "/portal") {
-		publish_pubsub(functionComplete, *state)
 		UIHandlers().ServeHTTP(w, r)
 	} else if handler, ok := h[path]; ok && handler.Enabled {
-		publish_pubsub(functionComplete, *state)
 		handler.ServeHTTP(w, r)
 	} else {
-		state.Error = "404 Not Found"
-		publish_pubsub(functionError, *state)
 		http.Error(w, "Not Found", http.StatusNotFound)
 	}
 }
@@ -236,16 +226,8 @@ func createAccountHandler(c *config.Config, service *config.Service, account *co
 	basePath := fmt.Sprintf("/service/%s/account/%s/", service.ServiceName, account.AccountName)
 	mux := http.NewServeMux()
 
-	state := &functionState{
-		StartTime: time.Now(),
-		Input:     fmt.Sprintf("createAccountHandler %s %s", service.ServiceName, account.AccountName),
-		Name:      "WebApiGateway.createAccountHandler",
-	}
-
 	modifyResponse, err := createModifyResponse(c.Url, basePath)
 	if err != nil {
-		state.Error = fmt.Sprintf("createAccountHandler.createModifyResponse %s", err.Error())
-		publish_pubsub(functionError, *state)
 		return "", nil, err
 	}
 
@@ -299,7 +281,7 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 
 		function_complete_state := &functionState{
 			StartTime: time.Now(),
-			Input:     fmt.Sprintf("{ 'function': 'createModifyResponse', 'request_url': '%s', 'response_code': '%d'}", r.Request.RequestURI, r.StatusCode),
+			Input:     fmt.Sprintf("{ 'method': 'createModifyResponse', 'request_url': '%s', }", r.Request.RequestURI),
 			Name:      "WebApiGateway.createModifyResponse",
 		}
 
@@ -317,10 +299,12 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 		}
 
 		if r.StatusCode >= 399 {
-			//function_complete_state.Error = r.Body
+			//function_complete_state.Error = r.Body // HTTP steam needs to be converted to text
+			function_complete_state.Result = fmt.Sprintf("{ 'StatusCode': '%d'}", r.StatusCode)
 			publish_pubsub(functionError, *function_complete_state)
 
 		} else {
+			function_complete_state.Error = fmt.Sprintf("{ 'StatusCode': '%d'}", r.StatusCode)
 			publish_pubsub(functionComplete, *function_complete_state)
 		}
 
@@ -503,18 +487,13 @@ func handleAuthTokenPageError(w http.ResponseWriter, err error) bool {
 }
 
 type functionState struct {
-	StartTime       time.Time      `json:"startTime"`
-	Input           string         `json:"input"`
-	Result          functionResult `json:"result"`
-	Error           string         `json:"errorMessage"`
-	ExecutionTimeMs int64          `json:"executionTimeMs"`
-	ProjectId       string         `json:"projectId"`
-	Name            string         `json:"name"`
-}
-
-type functionResult struct {
-	FunctionCall string `json:"functionCall"` // function being logged
-	Result       string `json:"result"`       // json string of result
+	StartTime       time.Time `json:"startTime"`
+	Input           string    `json:"input"`
+	Result          string    `json:"result"`
+	Error           string    `json:"errorMessage"`
+	ExecutionTimeMs int64     `json:"executionTimeMs"`
+	ProjectId       string    `json:"projectId"`
+	Name            string    `json:"admFunction"`
 }
 
 func publish_pubsub(topicID string, fn functionState) error {
