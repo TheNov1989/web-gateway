@@ -298,14 +298,13 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 			r.Header.Set("Location", newLocation.String())
 		}
 
-		if r.StatusCode >= 399 {
+		if r.StatusCode < 400 {
 			//function_complete_state.Error = r.Body // HTTP steam needs to be converted to text
 			function_complete_state.Result = fmt.Sprintf("{ 'StatusCode': '%d'}", r.StatusCode)
-			publish_pubsub(functionError, *function_complete_state)
-
+			publish_pubsub(functionComplete, *function_complete_state)
 		} else {
 			function_complete_state.Error = fmt.Sprintf("{ 'StatusCode': '%d'}", r.StatusCode)
-			publish_pubsub(functionComplete, *function_complete_state)
+			publish_pubsub(functionError, *function_complete_state)
 		}
 
 		return nil
