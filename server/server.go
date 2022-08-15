@@ -316,7 +316,13 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 			r.Header.Set("Location", newLocation.String())
 		}
 
-		publish_pubsub(functionComplete, *function_complete_state)
+		if r.StatusCode >= 399 {
+			//function_complete_state.Error = r.Body
+			publish_pubsub(functionError, *function_complete_state)
+
+		} else {
+			publish_pubsub(functionComplete, *function_complete_state)
+		}
 
 		return nil
 	}, nil
