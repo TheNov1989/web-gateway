@@ -503,7 +503,7 @@ type functionState struct {
 	Error           string         `json:"errorMessage"`
 	ExecutionTimeMs int64          `json:"executionTimeMs"`
 	ProjectId       string         `json:"projectId"`
-	Name            string         `json:"Name"`
+	Name            string         `json:"name"`
 }
 
 type functionResult struct {
