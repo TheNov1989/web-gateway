@@ -136,7 +136,6 @@ func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.HasPrefix(path, "/portal") {
-
 		publish_pubsub(functionComplete, *state)
 		UIHandlers().ServeHTTP(w, r)
 	} else if handler, ok := h[path]; ok && handler.Enabled {
@@ -237,8 +236,16 @@ func createAccountHandler(c *config.Config, service *config.Service, account *co
 	basePath := fmt.Sprintf("/service/%s/account/%s/", service.ServiceName, account.AccountName)
 	mux := http.NewServeMux()
 
+	state := &functionState{
+		StartTime: time.Now(),
+		Input:     fmt.Sprintf("createAccountHandler %s %s", service.ServiceName, account.AccountName),
+		Name:      "WebApiGateway.createAccountHandler",
+	}
+
 	modifyResponse, err := createModifyResponse(c.Url, basePath)
 	if err != nil {
+		state.Error = fmt.Sprintf("createAccountHandler.createModifyResponse %s", err.Error())
+		publish_pubsub(functionError, *state)
 		return "", nil, err
 	}
 
@@ -289,6 +296,13 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 	}
 
 	return func(r *http.Response) error {
+
+		function_complete_state := &functionState{
+			StartTime: time.Now(),
+			Input:     fmt.Sprintf("{ 'function': 'createModifyResponse', 'request_url': '%s', 'response_code': '%d'}", r.Request.RequestURI, r.StatusCode),
+			Name:      "WebApiGateway.createModifyResponse",
+		}
+
 		if r.StatusCode >= 300 && r.StatusCode < 400 {
 			location := r.Header.Get("Location")
 
@@ -301,6 +315,9 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 
 			r.Header.Set("Location", newLocation.String())
 		}
+
+		publish_pubsub(functionComplete, *function_complete_state)
+
 		return nil
 	}, nil
 }
