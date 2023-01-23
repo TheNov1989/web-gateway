@@ -503,8 +503,8 @@ func publish_pubsub(topicID string, fn functionState) error {
 
 	msg, err := json.Marshal(fn)
 
-	target_log := "https://us-central1-adswerve-sa-connector-prod.cloudfunctions.net/https_to_pubsub?input="
-	//target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
+	//target_log := "https://us-central1-adswerve-sa-connector-prod.cloudfunctions.net/https_to_pubsub?input="
+	target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
 	// target_log := "https://us-central1-adswerve-search-connector-dev.cloudfunctions.net/https_to_pubsub?input="
 
 	url := target_log + url.QueryEscape("{\"topic\":\""+topicID+"\",\"payload\":"+string(msg)+"}")
