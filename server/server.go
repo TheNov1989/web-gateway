@@ -362,9 +362,11 @@ func adjustRequest(r *http.Request, domain *url.URL) {
 		r.Header.Del(header)
 	}
 
-	if strings.Contains(r.URL.Path, "/v14.0/") {
-		r.URL.Path = strings.Replace(r.URL.Path, "/v14.0/", "/v15.0/", 1)
-	}
+	/*
+		if strings.Contains(r.URL.Path, "/v14.0/") {
+			r.URL.Path = strings.Replace(r.URL.Path, "/v14.0/", "/v15.0/", 1)
+		}
+	*/
 
 	r.RemoteAddr = ""
 	r.Host = domain.Host
