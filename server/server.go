@@ -302,9 +302,14 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 			log.Println("Could not Marshal Req Headers")
 		}
 
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Println("Could not Marshal Req Headers")
+		}
+
 		function_complete_state := &functionState{
 			StartTime: time.Now(),
-			Input:     fmt.Sprintf("{ 'method': 'createModifyResponse', 'request_url': '%s', 'method': 'response', 'res.headers': {%s}, 'res.body': %s}}", r.Request.RequestURI, resHeadersBytes, r.Body),
+			Input:     fmt.Sprintf("{ 'method': 'createModifyResponse', 'request_url': '%s', 'method': 'response', 'res.headers': {%s}, 'res.body': %s}}", r.Request.RequestURI, resHeadersBytes, body),
 			Name:      "WebApiGateway.createModifyResponse",
 		}
 
