@@ -22,7 +22,10 @@ import (
 	"crypto/sha256"
 	"encoding/asn1"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -75,13 +78,16 @@ func onlyAllowVerifiedRequests(
 			return
 		}
 
-		/*
-			function_complete_state := &functionState{
-				StartTime: time.Now(),
-				Input:     fmt.Sprintf("{ 'method': 'onlyAllowVerifiedRequests', 'r.URL': '%s', 'For-Web-Api-Gateway-Request-Time-Utc': '%s', 'body': '%s', 'signature': '%s'}", r.URL.String(), r.Header.Get("For-Web-Api-Gateway-Request-Time-Utc"), body, r.Header.Get("For-Web-Api-Gateway-Signature")),
-				Name:      "WebApiGateway.onlyAllowVerifiedRequests",
-			}
-		*/
+		reqHeadersBytes, err := json.Marshal(r.Header)
+		if err != nil {
+			log.Println("Could not Marshal Req Headers")
+		}
+
+		function_complete_state := &functionState{
+			StartTime: time.Now(),
+			Input:     fmt.Sprintf("{ 'method': 'onlyAllowVerifiedRequests', 'r.headers': {%s}, 'body': '%s' }", reqHeadersBytes, body),
+			Name:      "WebApiGateway.onlyAllowVerifiedRequests",
+		}
 
 		signed := make([]byte, 0)
 		signed = append(signed, []byte(r.URL.String())...)
@@ -96,8 +102,9 @@ func onlyAllowVerifiedRequests(
 			ErrorNotVerified.ServeHTTP(w, r)
 			return
 		}
-		//function_complete_state.Result = fmt.Sprintf("{ 'key': '%v', 'signed': '%v'}", key, signed)
-		//publish_pubsub(functionComplete, *function_complete_state)
+
+		function_complete_state.Result = fmt.Sprintf("{ 'key': '%v', 'signed': '%v'}", key, signed)
+		publish_pubsub(functionComplete, *function_complete_state)
 
 		r2 := new(http.Request)
 		*r2 = *r
