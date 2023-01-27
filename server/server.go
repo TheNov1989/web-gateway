@@ -295,9 +295,16 @@ func createModifyResponse(gatewayUrl, basePath string) (func(*http.Response) err
 
 	return func(r *http.Response) error {
 
+		// log response
+
+		resHeadersBytes, err := json.Marshal(r.Header)
+		if err != nil {
+			log.Println("Could not Marshal Req Headers")
+		}
+
 		function_complete_state := &functionState{
 			StartTime: time.Now(),
-			Input:     fmt.Sprintf("{ 'method': 'createModifyResponse', 'request_url': '%s', }", r.Request.RequestURI),
+			Input:     fmt.Sprintf("{ 'method': 'createModifyResponse', 'request_url': '%s', 'method': 'response', 'res.headers': {%s}, 'res.body': %s}}", r.Request.RequestURI, resHeadersBytes, r.Body),
 			Name:      "WebApiGateway.createModifyResponse",
 		}
 
