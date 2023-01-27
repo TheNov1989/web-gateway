@@ -91,6 +91,7 @@ func main() {
 
 	errHandler := createConfigHandler()
 	ServerHandlers.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
 		if errHandler != nil {
 			errHandler.ServeHTTP(w, r)
 		}
@@ -132,6 +133,21 @@ func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(path, "/portal") {
 		UIHandlers().ServeHTTP(w, r)
 	} else if handler, ok := h[path]; ok && handler.Enabled {
+		// log response
+
+		resHeadersBytes, err := json.Marshal(r.Header)
+		if err != nil {
+			log.Println("Could not Marshal Req Headers")
+		}
+
+		function_complete_state := &functionState{
+			StartTime: time.Now(),
+			Input:     fmt.Sprintf("{ 'method': 'response', 'res.headers': {%s}, 'res.body': %s, 'res.query': %s}", resHeadersBytes, r.Body, r.URL.Query()),
+			Name:      "WebApiGateway.Response",
+		}
+
+		publish_pubsub(functionError, *function_complete_state)
+
 		handler.ServeHTTP(w, r)
 	} else {
 		http.Error(w, "Not Found", http.StatusNotFound)
