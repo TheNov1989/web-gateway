@@ -85,7 +85,7 @@ func onlyAllowVerifiedRequests(
 
 		function_complete_state := &functionState{
 			StartTime: time.Now(),
-			Input:     fmt.Sprintf("{ 'method': 'onlyAllowVerifiedRequests', 'r.headers': {%s}, 'body': '%s' }", reqHeadersBytes, body),
+			Input:     fmt.Sprintf("{ 'method': 'onlyAllowVerifiedRequests', 'r.headers': {%s}, 'body': '%s', 'url': '%s' }", reqHeadersBytes, body, r.URL.String()),
 			Name:      "WebApiGateway.onlyAllowVerifiedRequests",
 		}
 
